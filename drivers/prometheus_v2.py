@@ -14,16 +14,25 @@ class PrometheusDriver(SourceDriver):
                                           metric_name,
                                           self._parse_tags(tags),
                                           interval)
-        metric = self._query_metric(query)
-        return metric
+        metric = self._parse_results(self._query_metric(query))
+        return float(metric)
 
     def _query_metric(self, query):
         print("final query: " + query)
-        response = requests.get(self.prometheus_endpoint + self.query_path,
-                                params={"query": query})
-                                #params={"query": "avg_over_time(mem_used_percent{host='bmk01'}[10m])"})
+        try:
+            response = requests.get(self.prometheus_endpoint + self.query_path,
+                                    params={"query": query})
+        except requests.exceptions.RequestException as e:
+            print("Request to prometheus HTTP API has failed, original traceback: {}".format(e))
+            return None
+        return response.json()["data"]["result"]
 
-        return response.json()
+    @staticmethod
+    def _parse_results(results):
+        if len(results) == 1:
+            return results[0]["value"][1]
+        else:
+            print("Filter driver got multiple results from prometheus, no ways to handle it")
 
     @staticmethod
     def _parse_tags(tags):
