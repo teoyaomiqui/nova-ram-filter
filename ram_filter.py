@@ -22,10 +22,6 @@ opts = [
                default='drivers.prometheus_v2',
                help='This is the path from where source_driver_class is loaded, '
                     'it should be importable by nova'),
-    cfg.FloatOpt('metric_threshold_percent',
-                 default=85.0,
-                 help='If metric exceeds this value, for particular nova host, '
-                      'filter will return false, and host will be excluded from scheduler list'),
     cfg.StrOpt('metric_evaluation_interval',
                default="5m",
                help='This is the period for which avarage metric value will be calculated, '
@@ -47,24 +43,25 @@ opts = [
                      "threshold: should be float, metric value queried from the driver will be compared against this, "
                      "using 'comparison_operator key of this dict"
                      "if True is a result of the operation, filter will remove host from the list "
-                     "(instance will not be scheduled on this host) ."
+                     "(instance will not be scheduled on this host),"
+                     "metric_evaluation_interval: interval over which to take avarage value"
 
                 ),
     cfg.DictOpt('cpu_usage_idle_options_dict',
                 default={
                     "comparison_operator": "less_than",
                     "threshold": 25.0,
+                    "metric_evaluation_interval": "5m"
                 }),
     cfg.DictOpt('mem_used_percent_options_dict',
                 default={
                     "comparison_operator": "greater_than",
-                    "threshold": 75.0
+                    "threshold": 75.0,
+                    "metric_evaluation_interval": "10m"
                 })
 ]
 CONF = cfg.CONF
 CONF.register_opts(opts)
-
-metric_names = ["mem_used_percent", "cpu_usage_idle"]
 
 
 class ActualRamFilter(filters.BaseHostFilter):
@@ -85,33 +82,35 @@ class ActualRamFilter(filters.BaseHostFilter):
         if source_driver_object:
 
             driver = source_driver_object(CONF.driver_opts)
-            for metric_name in metric_names:
+            for metric_name, metric_options in CONF.metrics_and_options_dict.iteritems():
+
+                metric_options_dict = getattr(CONF, metric_options)
 
                 try:
-                    metric_result = driver.get_metric(metric_name, CONF.metric_evaluation_interval,
+                    metric_result = driver.get_metric(metric_name, metric_options_dict["metric_evaluation_interval"],
                                                       tags=tags)
                 except Exception as e:
                     print("Could not query metric from driver")
                     print(e)
-                if metric_result and metric_result > CONF.metric_threshold_percent:
-                    print("host is not valid:\n"
-                          "metric: {}\n"
-                          "value: {}\n"
-                          "threshold: {}".format(metric_name,
-                                                 metric_result,
-                                                 CONF.metric_threshold_percent))
-                    is_valid_host = False
-                    return is_valid_host
+
+                try:
+                    if utils.metric_passes(metric_result, metric_options_dict):
+                        print("host is not valid:\n"
+                              "metric: {}\n"
+                              "value: {}\n"
+                              "threshold: {}".format(metric_name,
+                                                     metric_result,
+                                                     metric_options_dict["threshold"]))
+                        is_valid_host = False
+                        return is_valid_host
+                except NotImplementedError as e:
+                    print('Method is not implemented, filter is not configured properly, Host Passes')
+                    print(e)
+                    is_valid_host = True
         else:
             print("driver import failed, please verify that driver class %s exists" % CONF.source_driver_class)
 
         return is_valid_host
-
-
-if __name__ == '__main__':
-    host_state_from_nova = {"hostname": "node-101"}
-    source_driver = ActualRamFilter()
-    print(source_driver.host_passes(host_state_from_nova, "pizda"))
 
 
 
