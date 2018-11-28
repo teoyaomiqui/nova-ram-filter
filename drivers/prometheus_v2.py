@@ -8,14 +8,18 @@ class PrometheusDriver(SourceDriver):
         self.query_path = self.api_path + "query?"
         self.prometheus_endpoint = driver_opts["prometheus_endpoint"]
 
-    def get_metric(self, metric_name, tags, interval="5m", prometheus_function="avg_over_time"):
+    def get_metric(self, metric_name, interval,
+                   tags={}, prometheus_function="avg_over_time"):
 
+        metric = None
         query = "{0}({1}{2}[{3}])".format(prometheus_function,
                                           metric_name,
                                           self._parse_tags(tags),
                                           interval)
-        metric = self._parse_results(self._query_metric(query))
-        return float(metric)
+        query_result = self._query_metric(query)
+        if query_result:
+            metric = float(self._parse_results(query_result))
+        return metric
 
     def _query_metric(self, query):
         print("final query: " + query)
@@ -36,6 +40,7 @@ class PrometheusDriver(SourceDriver):
 
     @staticmethod
     def _parse_tags(tags):
-        parsed_tags = ",".join(["{}='{}'".format(key, val) for key, val in tags.iteritems()])
-        return "{" + parsed_tags + "}"
-
+        parsed_tags = ""
+        if tags != {}:
+            parsed_tags = "{" + ",".join(["{}='{}'".format(key, val) for key, val in tags.iteritems()]) + "}"
+        return parsed_tags
