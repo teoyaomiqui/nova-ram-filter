@@ -1,20 +1,24 @@
 import importlib
+from oslo_log import log
+
+
+LOG = log.getLogger('nova.scheduler.filter')
 
 
 def import_driver(driver_class, driver_path):
 
-    print("importing module from path %s" % driver_path)
+    LOG.debug("importing module from path %s" % driver_path)
     try:
         imported_driver_class = importlib.import_module(driver_path)
     except ImportError as e:
-        print("Can not import module named:%s" % driver_path)
-        print("Original Traceback: %s" % e.args[0])
+        LOG.warning("Can not import module named:%s" % driver_path)
+        LOG.error(e)
         return None
     try:
         driver_object = getattr(imported_driver_class, driver_class)
         return driver_object
     except Exception as e:
-        print(e)
+        LOG.error(e)
         return None
 
 

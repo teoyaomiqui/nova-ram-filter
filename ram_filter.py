@@ -4,10 +4,9 @@
 import utils
 
 from oslo_config import cfg
+from oslo_log import log
 
 from nova.scheduler import filters
-from nova.scheduler.filters import utils as nova_utils
-
 
 opts = [
     cfg.StrOpt('source_driver_class',
@@ -60,8 +59,11 @@ opts = [
                     "metric_evaluation_interval": "10m"
                 })
 ]
+
 CONF = cfg.CONF
 CONF.register_opts(opts)
+
+LOG = log.getLogger('nova.scheduler.filter')
 
 
 class ActualRamFilter(filters.BaseHostFilter):
@@ -74,9 +76,9 @@ class ActualRamFilter(filters.BaseHostFilter):
         try:
             tags = {"host": utils.parse_nova_hostname(host_state.nodename, CONF.use_nova_as_is_nodename)}
         except NotImplementedError:
-            print("Can not parse nova node name, behavior is not implemented yet."
-                  "Please check and set to True use_nova_as_is_nodename in config"
-                  "As behavior is not implemented, this host passes, nodename: {}".format(host_state.nodename))
+            LOG.debug("Can not parse nova node name, behavior is not implemented yet."
+                      "Please check and set to True use_nova_as_is_nodename in config"
+                      "As behavior is not implemented, this host passes, nodename: {}".format(host_state.nodename))
             return is_valid_host
 
         if source_driver_object:
@@ -90,25 +92,26 @@ class ActualRamFilter(filters.BaseHostFilter):
                     metric_result = driver.get_metric(metric_name, metric_options_dict["metric_evaluation_interval"],
                                                       tags=tags)
                 except Exception as e:
-                    print("Could not query metric from driver")
-                    print(e)
+                    LOG.warring("Could not query metric from driver")
+                    LOG.error(e)
 
                 try:
                     if utils.metric_passes(metric_result, metric_options_dict):
-                        print("host is not valid:\n"
-                              "metric: {}\n"
-                              "value: {}\n"
-                              "threshold: {}".format(metric_name,
-                                                     metric_result,
-                                                     metric_options_dict["threshold"]))
+                        LOG.debug("host is not valid:\n"
+                                  "metric: {}\n"
+                                  "value: {}\n"
+                                  "threshold: {}\n"
+                                  "Operator: {}".format(metric_name,
+                                                        metric_result,
+                                                        metric_options_dict["threshold"],
+                                                        metric_options_dict["comparison_operator"]))
                         is_valid_host = False
                         return is_valid_host
                 except NotImplementedError as e:
-                    print('Method is not implemented, filter is not configured properly, Host Passes')
-                    print(e)
-                    is_valid_host = True
+                    LOG.warring('Method is not implemented, filter is not configured properly, Host Passes')
+                    LOG.error(e)
         else:
-            print("driver import failed, please verify that driver class %s exists" % CONF.source_driver_class)
+            LOG.warning("driver import failed, please verify that driver class %s exists" % CONF.source_driver_class)
 
         return is_valid_host
 
