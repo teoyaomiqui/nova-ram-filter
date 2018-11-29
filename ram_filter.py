@@ -13,12 +13,12 @@ opts = [
                default="PrometheusDriver",
                help='path to the file name ending with class name'),
     cfg.BoolOpt('use_nova_as_is_nodename',
-                default='True',
+                default='False',
                 help='If true, it will take nova node name from host_state object, '
                      'and use it without any further processing, as is.'
                      'Currently only True is supported'),
     cfg.StrOpt('source_driver_path',
-               default='drivers.prometheus_v1',
+               default='nova_ram_filter.drivers.prometheus_v1',
                help='This is the path from where source_driver_class is loaded, '
                     'it should be importable by nova'),
     cfg.StrOpt('metric_evaluation_interval',
@@ -109,7 +109,7 @@ class ActualRamFilter(filters.BaseHostFilter):
                         is_valid_host = False
                         return is_valid_host
                     elif not metric_result:
-                        LOG.warning('Got empty result from source data driver')
+                        LOG.warning('Got empty result from source data driver for host {}:'.format(host_state.nodename))
                 except NotImplementedError:
                     LOG.warning('Method is not implemented, filter is not configured properly')
         else:
