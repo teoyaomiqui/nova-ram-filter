@@ -93,12 +93,8 @@ class ActualRamFilter(filters.BaseHostFilter):
 
                 metric_options_dict = getattr(CONF, metric_options)
 
-                try:
-                    metric_result = driver.get_metric(metric_name, metric_options_dict["metric_evaluation_interval"],
-                                                      tags=tags)
-                except Exception:
-                    LOG.warning("Could not query metric from driver, metric_name: {}".format(metric_name))
-                    continue
+                metric_result = driver.get_metric(metric_name, metric_options_dict["metric_evaluation_interval"],
+                                                  tags=tags)
                 try:
                     if metric_result and utils.metric_passes(metric_result, metric_options_dict):
                         LOG.debug("host {} is does not pass:\n"

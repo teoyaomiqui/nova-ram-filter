@@ -10,4 +10,4 @@ CONF.set_override('use_stderr', False)
 host_state = HostState("node-101", "node-169", "12lfaslk-3123fadsfsdjlk")
 
 source_driver = ram_filter.ActualRamFilter()
-print(source_driver.host_passes(host_state, "pizda"))
+print(source_driver.host_passes(host_state, "test"))
