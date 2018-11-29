@@ -1,20 +1,41 @@
 import importlib
+from oslo_log import log
 
-def import_driver(driver_name, driver_path="drivers"):
-  _path_array = driver_name.split(".")
-  driver_class_name = _path_array[-1]
-  driver_class_path = _path_array[:-1]
-  class_full_path = ".".join([driver_path] + driver_class_path)
-  print("importing module from path %s" % (class_full_path))
-  try:
-    imported_driver_class = importlib.import_module(class_full_path)
-  except ImportError as e:
-    print("Can not import module named:%s" % class_full_path)
-    print("Original Traceback: %s" % e.args[0])
-    return None
-  try:
-    driver_object = getattr(imported_driver_class, driver_class_name)
-    return driver_object
-  except Exception as e:
-    print(e)
-    return None
+
+LOG = log.getLogger('nova.scheduler.filter')
+
+
+def import_driver(driver_class, driver_path):
+
+    LOG.debug("importing module from path %s" % driver_path)
+    imported_driver_module = importlib.import_module(driver_path)
+    try:
+        driver_object = getattr(imported_driver_module, driver_class)
+        return driver_object
+    except Exception as e:
+        LOG.warning('Could not load class {} from module {}'.format(driver_class,
+                                                                    driver_path))
+        return None
+
+
+def parse_nova_hostname(nova_node_name, use_nova_as_is_nodename):
+
+    parsed_nova_hostname = nova_node_name
+    if not use_nova_as_is_nodename:
+        raise NotImplementedError
+    return parsed_nova_hostname
+
+
+def metric_passes(metric_value, metric_opts_dict):
+    operator = metric_opts_dict["comparison_operator"]
+    threshold = metric_opts_dict["threshold"]
+    if operator == "greater_than":
+        result = metric_value > threshold
+    elif operator == "less_than":
+        result = metric_value < threshold
+    elif operator == "equals":
+        result = metric_value == threshold
+    else:
+        raise NotImplementedError
+    return result
+
