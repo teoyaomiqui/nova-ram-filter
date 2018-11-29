@@ -8,17 +8,13 @@ LOG = log.getLogger('nova.scheduler.filter')
 def import_driver(driver_class, driver_path):
 
     LOG.debug("importing module from path %s" % driver_path)
+    imported_driver_module = importlib.import_module(driver_path)
     try:
-        imported_driver_class = importlib.import_module(driver_path)
-    except ImportError as e:
-        LOG.warning("Can not import module named:%s" % driver_path)
-        LOG.error(e)
-        return None
-    try:
-        driver_object = getattr(imported_driver_class, driver_class)
+        driver_object = getattr(imported_driver_module, driver_class)
         return driver_object
     except Exception as e:
-        LOG.error(e)
+        LOG.warning('Could not load class {} from module {}'.format(driver_class,
+                                                                    driver_path))
         return None
 
 

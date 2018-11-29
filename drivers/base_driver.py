@@ -1,7 +1,8 @@
 
-class SourceDriver():
-  def __init__(self):
-    pass
-  def get_metric(self, metric_name):
-    
-    return metric_name 
+class SourceDriver(object):
+
+    def __init__(self, driver_opts):
+        pass
+
+    def get_metric(self, metric_name, interval):
+        pass

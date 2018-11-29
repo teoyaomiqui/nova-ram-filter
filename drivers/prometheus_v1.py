@@ -7,7 +7,9 @@ LOG = log.getLogger('nova.scheduler.filter')
 
 
 class PrometheusDriver(SourceDriver):
+
     def __init__(self, driver_opts):
+        super(PrometheusDriver, self).__init__(driver_opts)
         self.api_path = "/api/v1/"
         self.query_path = self.api_path + "query?"
         self.prometheus_endpoint = driver_opts["prometheus_endpoint"]
@@ -21,12 +23,11 @@ class PrometheusDriver(SourceDriver):
                                           self._parse_tags(tags),
                                           interval)
         query_result = self._query_metric(query)
-        if query_result:
+        if query_result and query_result != []:
             try:
                 metric = float(self._parse_results(query_result))
-            except NotImplementedError as e:
-                LOG.debug("Filter driver got multiple results from prometheus, no ways to handle it")
-                LOG.debug(e)
+            except NotImplementedError:
+                LOG.warning("Can not parse metrics from prometheus")
         return metric
 
     def _query_metric(self, query):
@@ -34,8 +35,8 @@ class PrometheusDriver(SourceDriver):
             response = requests.get(self.prometheus_endpoint + self.query_path,
                                     params={"query": query})
         except requests.exceptions.RequestException as e:
-            LOG.warning("Request to prometheus HTTP API has failed, original traceback: ")
-            LOG.error(e)
+            LOG.warning("Request to prometheus HTTP API has failed prometheus server: {}"
+                        .format(self.prometheus_endpoint))
             return None
         return response.json()["data"]["result"]
 
