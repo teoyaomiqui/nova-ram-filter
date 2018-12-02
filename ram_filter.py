@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from oslo_config.cfg import ConfigOpts
 
 import utils
 
@@ -64,7 +64,7 @@ opts = [
 stc_filter_opt_group = cfg.OptGroup(name='stc_filter',
                                     title='custom filter options')
 
-CONF = cfg.CONF
+CONF = cfg.CONF  # type: ConfigOpts
 CONF.register_group(stc_filter_opt_group)
 CONF.register_opts(opts, group=stc_filter_opt_group)
 
@@ -78,7 +78,8 @@ class ActualRamFilter(filters.BaseHostFilter):
         is_valid_host = True  # type: bool
 
         try:
-            source_driver_object = utils.import_driver(CONF.stc_filter.source_driver_class, CONF.stc_filter.source_driver_path)
+            source_driver_object = utils.import_driver(CONF.stc_filter.source_driver_class,
+                                                       CONF.stc_filter.source_driver_path)
         except ImportError:
             LOG.error('Could not import driver class: {0}, module: {1}'. format(CONF.stc_filter.source_driver_class,
                                                                                 CONF.stc_filter.source_driver_path))
@@ -126,6 +127,3 @@ class ActualRamFilter(filters.BaseHostFilter):
                         CONF.stc_filter.source_driver_class)
         LOG.debug('Host: {} Passes: {}'.format(host_state.nodename, is_valid_host))
         return is_valid_host
-
-
-
