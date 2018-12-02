@@ -60,8 +60,13 @@ opts = [
                 })
 ]
 
+stc_filter_opt_group = cfg.OptGroup(name='stc_filter',
+                                    title='custom filter options')
+
+import sys
 CONF = cfg.CONF
-CONF.register_opts(opts)
+CONF.register_group(stc_filter_opt_group)
+CONF.register_opts(opts, group=stc_filter_opt_group)
 
 LOG = log.getLogger('nova.scheduler.filter')
 
@@ -73,13 +78,13 @@ class ActualRamFilter(filters.BaseHostFilter):
         is_valid_host = True  # type: bool
 
         try:
-            source_driver_object = utils.import_driver(CONF.source_driver_class, CONF.source_driver_path)
+            source_driver_object = utils.import_driver(CONF.stc_filter.source_driver_class, CONF.stc_filter.source_driver_path)
         except ImportError:
-            LOG.error('Could not import driver class: {0}, module: {1}'. format(CONF.source_driver_class,
-                                                                                CONF.source_driver_path))
+            LOG.error('Could not import driver class: {0}, module: {1}'. format(CONF.stc_filter.source_driver_class,
+                                                                                CONF.stc_filter.source_driver_path))
             return is_valid_host
         try:
-            tags = {"host": utils.parse_nova_hostname(host_state.nodename, CONF.use_nova_as_is_nodename)}
+            tags = {"host": utils.parse_nova_hostname(host_state.nodename, CONF.stc_filter.use_nova_as_is_nodename)}
         except NotImplementedError:
             LOG.debug("Can not parse nova node name, behavior is not implemented yet."
                       "Please check and set to True use_nova_as_is_nodename in config"
@@ -88,10 +93,10 @@ class ActualRamFilter(filters.BaseHostFilter):
 
         if source_driver_object:
 
-            driver = source_driver_object(CONF.driver_opts)
-            for metric_name, metric_options in CONF.metrics_and_options_dict.iteritems():
+            driver = source_driver_object(CONF.stc_filter.driver_opts)
+            for metric_name, metric_options in CONF.stc_filter.metrics_and_options_dict.iteritems():
 
-                metric_options_dict = getattr(CONF, metric_options)
+                metric_options_dict = getattr(CONF.stc_filter, metric_options)
 
                 metric_result = driver.get_metric(metric_name, metric_options_dict["metric_evaluation_interval"],
                                                   tags=tags)
@@ -113,7 +118,7 @@ class ActualRamFilter(filters.BaseHostFilter):
                 except NotImplementedError:
                     LOG.warning('Method is not implemented, filter is not configured properly')
         else:
-            LOG.warning("driver import failed, please verify that driver class %s exists" % CONF.source_driver_class)
+            LOG.warning("driver import failed, please verify that driver class %s exists" % CONF.stc_filter.source_driver_class)
         LOG.debug('Host: {} Passes: {}'.format(host_state.nodename, is_valid_host))
         return is_valid_host
 
