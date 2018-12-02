@@ -11,7 +11,8 @@ from nova.scheduler import filters
 opts = [
     cfg.StrOpt('source_driver_class',
                default="PrometheusDriver",
-               help='path to the file name ending with class name'),
+               help='path to the file name ending with class name'
+                    'value returned from driver should be convertale to float'),
     cfg.BoolOpt('use_nova_as_is_nodename',
                 default='False',
                 help='If true, it will take nova node name from host_state object, '
@@ -63,7 +64,6 @@ opts = [
 stc_filter_opt_group = cfg.OptGroup(name='stc_filter',
                                     title='custom filter options')
 
-import sys
 CONF = cfg.CONF
 CONF.register_group(stc_filter_opt_group)
 CONF.register_opts(opts, group=stc_filter_opt_group)
@@ -102,7 +102,7 @@ class ActualRamFilter(filters.BaseHostFilter):
                                                   tags=tags)
                 try:
                     if metric_result and utils.metric_passes(metric_result, metric_options_dict):
-                        LOG.debug("host {} is does not pass:\n"
+                        LOG.debug("host {} does not pass:\n"
                                   "metric: {}\n"
                                   "value: {}\n"
                                   "threshold: {}\n"
@@ -117,8 +117,13 @@ class ActualRamFilter(filters.BaseHostFilter):
                         LOG.warning('Got empty result from source data driver for host {}:'.format(host_state.nodename))
                 except NotImplementedError:
                     LOG.warning('Method is not implemented, filter is not configured properly')
+                except ValueError:
+                    LOG.warning('Could not convert provided values to FLOAT for comparison:'
+                                'threshold value: {}'
+                                'metric_result: {}'.format(metric_options_dict["threshold"], metric_result))
         else:
-            LOG.warning("driver import failed, please verify that driver class %s exists" % CONF.stc_filter.source_driver_class)
+            LOG.warning("driver import failed, please verify that driver class %s exists" %
+                        CONF.stc_filter.source_driver_class)
         LOG.debug('Host: {} Passes: {}'.format(host_state.nodename, is_valid_host))
         return is_valid_host
 

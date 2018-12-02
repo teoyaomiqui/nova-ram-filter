@@ -25,7 +25,7 @@ class PrometheusDriver(SourceDriver):
         query_result = self._query_metric(query)
         if query_result and query_result != []:
             try:
-                metric = float(self._parse_results(query_result))
+                metric = self._parse_results(query_result)
             except NotImplementedError:
                 LOG.warning("Can not parse metrics from prometheus")
         return metric

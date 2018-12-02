@@ -30,13 +30,14 @@ def parse_nova_hostname(nova_node_name, use_nova_as_is_nodename):
 
 def metric_passes(metric_value, metric_opts_dict):
     operator = metric_opts_dict["comparison_operator"]
-    threshold = metric_opts_dict["threshold"]
+    threshold = float(metric_opts_dict["threshold"])
+    float_metric_value = float(metric_value)
     if operator == "greater_than":
-        result = metric_value > threshold
+        result = float_metric_value > threshold
     elif operator == "less_than":
-        result = metric_value < threshold
+        result = float_metric_value < threshold
     elif operator == "equals":
-        result = metric_value == threshold
+        result = float_metric_value == threshold
     else:
         raise NotImplementedError
     return result
