@@ -19,7 +19,7 @@ opts = [
                      'and use it without any further processing, as is.'
                      'Currently only True is supported'),
     cfg.StrOpt('source_driver_path',
-               default='nova_ram_filter.drivers.prometheus_v1',
+               default='stc_nova_filters.drivers.prometheus_v1',
                help='This is the path from where source_driver_class is loaded, '
                     'it should be importable by nova'),
     cfg.StrOpt('metric_evaluation_interval',
@@ -71,7 +71,7 @@ CONF.register_opts(opts, group=stc_filter_opt_group)
 LOG = log.getLogger('nova.scheduler.filter')
 
 
-class ActualRamFilter(filters.BaseHostFilter):
+class ActualResourceFilter(filters.BaseHostFilter):
 
     def host_passes(self, host_state, spec_obj):
 
