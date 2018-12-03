@@ -50,13 +50,13 @@ opts = [
     cfg.DictOpt('cpu_usage_idle_options_dict',
                 default={
                     "comparison_operator": "less_than",
-                    "threshold": 25.0,
+                    "threshold": 10.0,
                     "metric_evaluation_interval": "5m"
                 }),
     cfg.DictOpt('mem_used_percent_options_dict',
                 default={
                     "comparison_operator": "greater_than",
-                    "threshold": 75.0,
+                    "threshold": 90.0,
                     "metric_evaluation_interval": "10m"
                 })
 ]
