@@ -13,6 +13,7 @@ class PrometheusDriver(SourceDriver):
         self.api_path = "/api/v1/"
         self.query_path = self.api_path + "query?"
         self.prometheus_endpoint = driver_opts["prometheus_endpoint"]
+        self.request_timeout = driver_opts["request_timeout"] if "request_timeout" in driver_opts else 1.0
 
     def get_metric(self, metric_name, interval,
                    tags={}, prometheus_function="avg_over_time"):
@@ -33,10 +34,11 @@ class PrometheusDriver(SourceDriver):
     def _query_metric(self, query):
         try:
             response = requests.get(self.prometheus_endpoint + self.query_path,
-                                    params={"query": query})
+                                    params={"query": query}, timeout=self.request_timeout)
         except requests.exceptions.RequestException as e:
-            LOG.warning("Request to prometheus HTTP API has failed prometheus server: {}"
-                        .format(self.prometheus_endpoint))
+            LOG.warning("Request to prometheus HTTP API has failed, prometheus server: {}, "
+                        "Consider changing timeout for http request, timeout: {}"
+                        .format(self.prometheus_endpoint, self.request_timeout))
             return None
         return response.json()["data"]["result"]
 
