@@ -32,15 +32,24 @@ class PrometheusDriver(SourceDriver):
         return metric
 
     def _query_metric(self, query):
+        response = None
+        data = None
         try:
             response = requests.get(self.prometheus_endpoint + self.query_path,
                                     params={"query": query}, timeout=self.request_timeout)
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.ReadTimeout:
             LOG.warning("Request to prometheus HTTP API has failed, prometheus server: {}, "
                         "Consider changing timeout for http request, timeout: {}"
                         .format(self.prometheus_endpoint, self.request_timeout))
-            return None
-        return response.json()["data"]["result"]
+        except requests.exceptions.RequestException:
+            LOG.warning("Request to prometheus HTTP API has failed, prometheus server: {}, "
+                        .format(self.prometheus_endpoint))
+        try:
+            data = response.json()["data"]["result"] if response else None
+        except KeyError:
+            LOG.warning("Request to prometheus HTTP API returned invalid result, prometheus server: {}, "
+                        .format(self.prometheus_endpoint))
+        return data
 
     @staticmethod
     def _parse_results(results):
