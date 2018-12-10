@@ -30,7 +30,7 @@ opts = [
     cfg.DictOpt('driver_opts',
                 default={
                     "prometheus_endpoint": "http://mtr:9094",
-                    "request_timeout": 0.05
+                    "request_timeout": 0.5
                 }),
     cfg.DictOpt('metrics_and_options_dict',
                 default={
